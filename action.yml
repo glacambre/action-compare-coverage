@@ -1,0 +1,13 @@
+name: 'Compage coverage'
+description: 'Compare coverage reports from a PR with the ones downloaded from artifacts uploaded from the master branch.'
+inputs:
+  github_token:
+    description: 'Github token'
+    required: 'true'
+  nyc_results:
+    description: 'The coverage data file'
+    required: 'true'
+    default: '.nyc_output/results'
+runs:
+  using: 'node12'
+  main: 'main.js'

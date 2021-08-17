@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@actions/artifact": "^0.5.2",
+    "@actions/core": "^1.4.0",
+    "@actions/github": "^5.0.0",
+    "adm-zip": "^0.5.5",
+    "istanbul-lib-coverage": "^3.0.0",
+    "istanbul-lib-report": "^3.0.0",
+    "istanbul-reports": "^3.0.2",
+    "node-fetch": "^2.6.1",
+    "nyc": "^15.1.0"
+  }
+}
