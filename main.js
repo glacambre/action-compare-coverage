@@ -57,9 +57,7 @@ async function main() {
     repo,
     basehead: `${baseline_ref}...${head_sha}`,
   })).data;
-  core.info(JSON.stringify(comparison));
   const changed_filenames = new Set(comparison.files.map(f => f.filename));
-  core.info(changed_filenames);
 
 
   const all_artifacts = await octokit.request('GET /repos/{owner}/{repo}/actions/artifacts', {
@@ -90,26 +88,14 @@ async function main() {
   let master_total = master_coverage.total;
   delete master_coverage.total;
 
-  let conclusion;
-  let title;
-  if (branch_total.lines.pct < master_total.lines.pct) {
-    conclusion = 'failure';
-    title = 'Coverage is decreasing';
-  } else {
-    conclusion = 'success';
-    if (branch_total.lines.pct === master_total.lines.pct) {
-      title = 'Coverage is not changing';
-    } else {
-      title = 'Coverage is increasing';
-    }
-  }
+  let conclusion = 'pending';
+  let title = 'Coverage is not changing';
 
   let summary = '| File | Coverage | Delta |';
   summary += '\n' + summary.split("").map((x) => x === '|' || x === ' ' ? x : '-').join("") + '\n';
   let prefix = process.cwd().length + 1;
-  core.info(process.cwd());
+  let files_changed = 0;
   for (let [path, file] of Object.entries(branch_coverage).sort((x, y) => x[0].localeCompare(y[0]))) {
-    core.info(path, file)
     if (file === undefined) {
       continue;
     }
@@ -117,8 +103,9 @@ async function main() {
     if (!changed_filenames.has(name)) {
       continue;
     }
+    files_changed += 1;
     let master_file = master_coverage[path];
-    let url = `[${name}](${head_url + name})`;
+    let url = `[${name}](${head_url + '/' + name})`;
     let bar = "";
     for (let i = 0; i < 10; ++i) {
       bar += (i < Math.floor(file.lines.pct / 10)) ? '⬛' : '⬜';
@@ -126,9 +113,25 @@ async function main() {
     // The comparison here is to make sure we avoid floating-point idiocy
     const file_pct = Math.floor(file.lines.pct * 100);
     const master_pct = Math.floor(file.lines.pct * 100);
+
+    if (file_pct < master_pct) {
+      conclusion = 'failure';
+      title = 'Coverage is decreasing';
+    } else if (conclusion == 'pending' && file_pct > master_pct) {
+        title = 'Coverage is increasing';
+    }
+
     let delta = (file_pct - master_pct) / 100;
     let delta_string = (delta >= 0 ? '+' : '') + delta + (delta === 0 ? ".0" : "")
     summary += `| ${url} | ${bar} ${file.lines.pct}% | ${delta_string} |\n`;
+  }
+
+  if (files_changed === 0) {
+    summary = "None of the files changed in this PR have coverage data.";
+  }
+
+  if (conclusion == 'pending') {
+    conclusion = 'success';
   }
 
   const check_run = await octokit.request('POST /repos/{owner}/{repo}/check-runs', {
@@ -145,7 +148,6 @@ async function main() {
       summary: `${summary}`,
     }
   })
-  // core.info(JSON.stringify(check_run));
 }
 
 main()
