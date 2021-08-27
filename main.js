@@ -100,9 +100,6 @@ async function main() {
       continue;
     }
     let name = path.substr(prefix);
-    if (!changed_filenames.has(name)) {
-      continue;
-    }
     files_changed += 1;
     let master_file = master_coverage[path];
     let url = `[${name}](${head_url + '/' + name})`;
@@ -118,16 +115,12 @@ async function main() {
       conclusion = 'failure';
       title = 'Coverage is decreasing';
     } else if (conclusion == 'pending' && file_pct > master_pct) {
-        title = 'Coverage is increasing';
+      title = 'Coverage is increasing';
     }
 
     let delta = (file_pct - master_pct) / 100;
     let delta_string = (delta >= 0 ? '+' : '') + delta + (delta === 0 ? ".0" : "")
     summary += `| ${url} | ${bar} ${file.lines.pct}% | ${delta_string} |\n`;
-  }
-
-  if (files_changed === 0) {
-    summary = "None of the files changed in this PR have coverage data.";
   }
 
   if (conclusion == 'pending') {
