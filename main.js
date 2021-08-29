@@ -91,7 +91,7 @@ async function main() {
   let conclusion = 'pending';
   let title = 'Coverage is not changing';
 
-  let summary = '| File | Coverage | Delta |';
+  let summary = '| ❓ | File | Coverage | Delta |';
   summary += '\n' + summary.split("").map((x) => x === '|' || x === ' ' ? x : '-').join("") + '\n';
   let prefix = process.cwd().length + 1;
   for (let [path, file] of Object.entries(branch_coverage).sort((x, y) => x[0].localeCompare(y[0]))) {
@@ -113,20 +113,24 @@ async function main() {
     const file_pct = Math.floor(file.lines.pct * 100);
     const master_pct = master_file === undefined ? 0 : Math.floor(master_file.lines.pct * 100);
 
+    let emoji;
     if (file_pct < master_pct) {
+      emoji = '❌';
       conclusion = 'failure';
-      title = 'Coverage is decreasing';
-    } else if (conclusion == 'pending' && file_pct > master_pct) {
-      title = 'Coverage is increasing';
+    } else {
+      emoji = '✔️';
     }
 
     let delta = (file_pct - master_pct) / 100;
     let delta_string = (delta >= 0 ? '+' : '') + delta + (delta === 0 ? ".0" : "")
-    summary += `| ${url} | ${bar} ${file.lines.pct}% | ${delta_string} |\n`;
+    summary += `| ${emoji} | ${url} | ${bar} ${file.lines.pct}% | ${delta_string} |\n`;
   }
 
   if (conclusion == 'pending') {
+    title = 'Coverage is increasing';
     conclusion = 'success';
+  } else if (conclusion == 'failure') {
+      title = 'Coverage is decreasing';
   }
 
   const check_run = await octokit.request('POST /repos/{owner}/{repo}/check-runs', {
