@@ -99,10 +99,10 @@ async function main() {
       continue;
     }
     let name = path.substr(prefix);
-    if (name.startsWith("node_modules")) {
+    if (name.startsWith("node_modules") || name.startsWith("bpack/runtime/")) {
       continue;
     }
-    core.info(path);
+    core.info(name, path);
     let master_file = master_coverage[path];
     let url = `[${name}](${head_url + '/' + name})`;
     let bar = "";
@@ -111,7 +111,7 @@ async function main() {
     }
     // The comparison here is to make sure we avoid floating-point idiocy
     const file_pct = Math.floor(file.lines.pct * 100);
-    const master_pct = Math.floor(file.lines.pct * 100);
+    const master_pct = master_file === undefined ? 0 : Math.floor(master_file.lines.pct * 100);
 
     if (file_pct < master_pct) {
       conclusion = 'failure';
