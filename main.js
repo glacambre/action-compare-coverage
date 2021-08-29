@@ -94,13 +94,15 @@ async function main() {
   let summary = '| File | Coverage | Delta |';
   summary += '\n' + summary.split("").map((x) => x === '|' || x === ' ' ? x : '-').join("") + '\n';
   let prefix = process.cwd().length + 1;
-  let files_changed = 0;
   for (let [path, file] of Object.entries(branch_coverage).sort((x, y) => x[0].localeCompare(y[0]))) {
     if (file === undefined) {
       continue;
     }
     let name = path.substr(prefix);
-    files_changed += 1;
+    if (name.startsWith("node_modules")) {
+      continue;
+    }
+    core.info(path);
     let master_file = master_coverage[path];
     let url = `[${name}](${head_url + '/' + name})`;
     let bar = "";
