@@ -99,7 +99,7 @@ async function main() {
       continue;
     }
     let name = path.substr(prefix);
-    if (name.startsWith("node_modules") || name.startsWith("bpack/runtime/")) {
+    if (["node_modules", "bpack/runtime/", "bpack/bootstrap"].find(n => name.startsWith(n))) {
       continue;
     }
     core.info(name, path);
