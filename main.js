@@ -69,24 +69,26 @@ async function main() {
   }
 
   const baseline_artifact = all_artifacts.data.artifacts.find((x) => x.name === baseline);
-  if (baseline_artifact === undefined) {
-    throw new Error(`No artifact found with name ${baseline}`);
-  }
-  const download_url = await octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
-    owner,
-    repo,
-    artifact_id: baseline_artifact.id,
-    archive_format: 'zip'
-  })
-  const zip = new AdmZip(await (fetch(download_url.url).then(r => r.buffer())));
+  let master_coverage = {};
+  let master_total = 0;
+  if (baseline_artifact !== undefined) {
+    const download_url = await octokit.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}', {
+      owner,
+      repo,
+      artifact_id: baseline_artifact.id,
+      archive_format: 'zip'
+    })
+    const zip = new AdmZip(await (fetch(download_url.url).then(r => r.buffer())));
 
-  fs.writeFileSync("baseline", zip.getEntry(nyc_results.split(sep).slice(-1)[0]).getData());
-  const master_coverage = await getSummary("baseline");
+    fs.writeFileSync("baseline", zip.getEntry(nyc_results.split(sep).slice(-1)[0]).getData());
+    master_coverage = await getSummary("baseline");
+    master_total = master_coverage.total;
+    delete master_coverage.total;
+  }
+
   const branch_coverage = await getSummary(nyc_results);
   let branch_total = branch_coverage.total;
   delete branch_coverage.total;
-  let master_total = master_coverage.total;
-  delete master_coverage.total;
 
   let conclusion = 'pending';
   let title = 'Coverage is not changing';
