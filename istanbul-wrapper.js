@@ -1,10 +1,9 @@
+import fs from 'node:fs';
 
-const fs = require('fs');
-
-const libCoverage = require('istanbul-lib-coverage');
-const libReport = require('istanbul-lib-report');
-const reports = require('istanbul-reports');
-const SourceMaps = require('nyc/lib/source-maps');
+import libCoverage from 'istanbul-lib-coverage';
+import libReport from 'istanbul-lib-report';
+import reports from 'istanbul-reports';
+import SourceMaps from 'nyc/lib/source-maps.js';
 
 async function getSummary(fileName) {
   const cov = JSON.parse(fs.readFileSync(fileName).toString());
@@ -35,4 +34,4 @@ async function getSummary(fileName) {
   return JSON.parse(fs.readFileSync(report.file));
 }
 
-module.exports = getSummary;
+export default getSummary;

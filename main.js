@@ -1,14 +1,15 @@
-const fs = require('fs');
-const sep = require('path').sep;
+import fs from 'node:fs';
+import { sep } from 'node:path';
+import process from 'node:process';
+import { Buffer } from 'node:buffer';
 
-const getSummary = require('./istanbul-wrapper');
+import * as core from '@actions/core';
+import { DefaultArtifactClient } from '@actions/artifact';
+import * as github from '@actions/github';
 
-const core = require('@actions/core');
-const artifact = require('@actions/artifact');
-const github = require('@actions/github');
+import AdmZip from 'adm-zip';
 
-const AdmZip = require('adm-zip');
-const fetch = require('node-fetch');
+import getSummary from './istanbul-wrapper.js';
 
 function ref_to_coverage_artifact_name(ref) {
   const prefix = "refs/heads/";
@@ -25,15 +26,14 @@ async function main() {
   // Just upload coverage for branch as artifact
   if (github.context.eventName === "push") {
     core.info(`Uploading coverage artifact.`);
-    const artifactClient = artifact.create();
+    const artifactClient = new DefaultArtifactClient();
     const artifactName = ref_to_coverage_artifact_name(github.context.ref);
     const files = [nyc_results];
     const rootDirectory = nyc_results.split(sep).slice(0,-1).join(sep);
-    const uploadResult = await artifactClient.uploadArtifact(
+    await artifactClient.uploadArtifact(
       artifactName,
       files,
       rootDirectory,
-      { continueOnError: true},
     );
     return;
   }
@@ -78,7 +78,7 @@ async function main() {
       artifact_id: baseline_artifact.id,
       archive_format: 'zip'
     })
-    const zip = new AdmZip(await (fetch(download_url.url).then(r => r.buffer())));
+    const zip = new AdmZip(Buffer.from(await (await fetch(download_url.url)).arrayBuffer()));
 
     fs.writeFileSync("baseline", zip.getEntry(nyc_results.split(sep).slice(-1)[0]).getData());
     master_coverage = await getSummary("baseline");
@@ -151,4 +151,4 @@ async function main() {
   })
 }
 
-main()
+await main();
